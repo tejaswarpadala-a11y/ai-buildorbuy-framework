@@ -62,6 +62,40 @@ This project is being developed in collaboration with **Professor Daniel Ringel*
 
 ---
 
+### System Architecture
+```mermaid
+graph LR
+    A[Input Dataset<br/>CFPB Complaints] --> B[Data Preprocessing<br/>Cleaning & Splitting]
+    
+    B --> C{Evaluation Layer}
+    
+    C --> D[API-Based Models<br/>GPT-4o, Claude, Gemini]
+    C --> E[Fine-Tuned Models<br/>RoBERTa Specialist]
+    
+    D --> F[API Metrics<br/>Cost: $120/10k<br/>Latency: 4 hrs<br/>F1: 0.790]
+    E --> G[Specialist Metrics<br/>Cost: ~$0/10k<br/>Latency: 15 min<br/>F1: 0.849]
+    
+    F --> H[Comparison Framework<br/>Performance vs Cost vs Speed]
+    G --> H
+    
+    H --> I{Build vs Buy<br/>Recommendation}
+    
+    I --> J[Build: Fine-Tuned Model<br/>✓ Higher accuracy<br/>✓ Lower cost at scale<br/>✓ 16x faster]
+    I --> K[Buy: GenAI API<br/>✓ Lower upfront cost<br/>✓ No training needed<br/>✓ Flexible]
+    
+    style A fill:#e1f5ff
+    style B fill:#fff4e1
+    style D fill:#ffe1e1
+    style E fill:#e1ffe1
+    style F fill:#ffe1e1
+    style G fill:#e1ffe1
+    style H fill:#f0e1ff
+    style I fill:#fff0e1
+    style J fill:#e1ffe1
+    style K fill:#ffe1e1
+```
+
+
 ## The Approach: Hybrid Intelligence
 
 Rather than choosing GenAI *or* traditional ML, I designed a three-stage system that leverages the strengths of both:
