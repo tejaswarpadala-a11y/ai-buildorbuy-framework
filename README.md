@@ -6,7 +6,7 @@
 [![HuggingFace](https://img.shields.io/badge/🤗-HuggingFace-yellow)](https://huggingface.co/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-*Built by Teja Padala | Entrepreneur (TekWinn: $1.8M ARR Exit) → MBA at UNC Kenan-Flagler*
+**Built by Teja Padala | Lead Engineer → Founder (TekWinn: $1.8M ARR Exit) → AI Strategy (EssilorLuxottica) → VC Associate (Excelerate Health Ventures) | MBA at UNC Kenan-Flagler 2026**
 
 ---
 
