@@ -1,0 +1,173 @@
+{
+  "schema_version": "v2",
+  "construct": "ROOT CAUSE OF FINANCIAL SERVICE FAILURE",
+  "classification_type": "multi-class",
+  "num_labels": 7,
+  "precedence_hierarchy": [
+    "Fraud / Security Issue",
+    "Hidden Fees",
+    "Credit Reporting Error",
+    "Loan/Mortgage Servicing Issue",
+    "Account Access / Administration",
+    "Process Failure / Red Tape",
+    "Other"
+  ],
+  "labels": {
+    "Hidden Fees": {
+      "id": 0,
+      "definition": "Customer reports unexpected, undisclosed, duplicate, or confusing charges",
+      "include": [
+        "Overdraft fees not explained",
+        "Maintenance fees not disclosed",
+        "Duplicate charges",
+        "Surprise service fees"
+      ],
+      "exclude": [
+        "Fraudulent charges (use Fraud)",
+        "Interest rate complaints",
+        "Delays resolving fee (use Process Failure)"
+      ],
+      "examples": [
+        "They charged me a maintenance fee I never agreed to",
+        "I was billed twice for the same transaction"
+      ],
+      "priority": "High",
+      "business_impact": "Customer retention, revenue leakage"
+    },
+    "Fraud / Security Issue": {
+      "id": 1,
+      "definition": "Unauthorized transactions, identity theft, or account compromise",
+      "include": [
+        "Someone used my card without permission",
+        "My account was hacked",
+        "Unauthorized ACH transfer",
+        "Identity theft"
+      ],
+      "exclude": [
+        "Billing disputes without fraud claim",
+        "Incorrect reporting without fraud (use Credit Reporting)"
+      ],
+      "special_rule": "Fraud overrides all other labels. If fraud leads to credit reporting issue, still label Fraud",
+      "examples": [
+        "There were charges from a state I've never been to",
+        "My login was changed and money disappeared"
+      ],
+      "priority": "Critical",
+      "business_impact": "Financial loss, regulatory exposure, trust erosion"
+    },
+    "Credit Reporting Error": {
+      "id": 2,
+      "definition": "Incorrect information sent to credit bureaus",
+      "include": [
+        "Late payment incorrectly reported",
+        "Wrong balance on credit report",
+        "Account marked delinquent in error"
+      ],
+      "exclude": [
+        "Loan denial without reporting issue",
+        "Identity theft cases (use Fraud)",
+        "Dispute handling complaints (use Process Failure)"
+      ],
+      "clarification": "If main complaint is incorrect data reported → Credit Reporting. If complaint is about dispute handling → Process Failure",
+      "examples": [
+        "They reported a late payment I never missed",
+        "My credit score dropped because of wrong information"
+      ],
+      "priority": "High",
+      "business_impact": "Regulatory risk (FCRA), customer credit damage"
+    },
+    "Loan/Mortgage Servicing Issue": {
+      "id": 3,
+      "definition": "Mortgage or loan payment application issues",
+      "include": [
+        "Payments not applied correctly",
+        "Escrow miscalculated",
+        "They say I missed a payment I made",
+        "Mortgage marked late despite payment"
+      ],
+      "exclude": [
+        "Credit reporting disputes (use Credit Reporting)",
+        "Fraud cases (use Fraud)"
+      ],
+      "examples": [
+        "They say I missed a payment I clearly made",
+        "My escrow account was miscalculated"
+      ],
+      "priority": "Medium",
+      "business_impact": "Operational efficiency, customer satisfaction"
+    },
+    "Account Access / Administration": {
+      "id": 4,
+      "definition": "Locked accounts, account closure/freezes, login issues, inability to access funds (non-fraud)",
+      "include": [
+        "Account frozen",
+        "Can't log in",
+        "Bank closed my account",
+        "Funds inaccessible due to administrative action"
+      ],
+      "exclude": [
+        "Account takeover (use Fraud)",
+        "Service complaints about wait times (use Process Failure)"
+      ],
+      "clarification": "Account locked due to suspected fraud → label as Fraud, not Account Access",
+      "examples": [
+        "My account was frozen and I cannot access my money",
+        "They closed my account without warning"
+      ],
+      "priority": "Medium",
+      "business_impact": "Customer liquidity, operational friction"
+    },
+    "Process Failure / Red Tape": {
+      "id": 5,
+      "definition": "Repeated transfers, delays, poor dispute handling, unresolved loops, lack of response",
+      "include": [
+        "Called multiple times with no resolution",
+        "Endless department transfers",
+        "Promised callback never happened",
+        "Excessive documentation requests"
+      ],
+      "exclude": [
+        "Incorrect credit reporting (primary harm)",
+        "Fee disputes (primary harm = money charged)",
+        "Fraud cases"
+      ],
+      "clarification": "If customer complains mainly about poor service handling → Process Failure. If complaint centers on financial mistake → use that category instead",
+      "examples": [
+        "Every time I call they tell me to call another department",
+        "They said they would call back and never did"
+      ],
+      "priority": "Low",
+      "business_impact": "Customer experience, operational efficiency"
+    },
+    "Other": {
+      "id": 6,
+      "definition": "Complaint does not clearly match any operational failure category",
+      "use_only_if": [
+        "No clear operational failure",
+        "Ambiguous complaint without identifiable root cause"
+      ],
+      "expected_frequency": "<5%",
+      "priority": "Triage",
+      "business_impact": "Requires manual review"
+    }
+  },
+  "decision_rules": {
+    "primary_harm_rule": "Label based on operational failure that directly caused financial or access problem, not downstream consequences",
+    "fraud_override": "If unauthorized activity mentioned, always label Fraud even if other issues follow",
+    "multi_issue_handling": "Choose most severe operational risk. If unclear, use precedence hierarchy",
+    "borderline_cases": {
+      "unauthorized_charge_plus_credit_impact": "Fraud",
+      "fee_dispute_plus_many_calls": "Hidden Fees (unless process loop dominates)",
+      "loan_issue_plus_credit_impact": "Choose main harm emphasized",
+      "incorrect_credit_reporting_plus_long_dispute": "Credit Reporting",
+      "account_locked_suspected_fraud": "Fraud"
+    }
+  },
+  "labeling_principles": [
+    "Do NOT label based on emotional tone",
+    "Do NOT label based on severity",
+    "Do NOT label based on number of issues mentioned",
+    "Do NOT label based on dispute history",
+    "DO label based on: What operational failure directly caused the problem?"
+  ]
+}
