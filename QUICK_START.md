@@ -1,220 +1,50 @@
-# Quick Start Guide
+# Quick Start
 
-Get the Bank Rage Classifier running in 15 minutes.
+This repository is a **portfolio write-up** of a completed applied-AI research project (the Bank Rage Analyzer), plus the supporting taxonomy. It is not a runnable end-to-end benchmark — the notebooks, raw CFPB data, API keys, and trained model weights are not included. See [REPRODUCIBILITY.md](REPRODUCIBILITY.md) for the full inclusion/exclusion list.
+
+If you are reviewing this as a portfolio piece, start here:
+
+1. **[README.md](README.md)** — the full write-up: the build-vs-buy question, method, GenAI leaderboard, specialist comparison, cost economics, and the deployment recommendation.
+2. **[docs/jake-summary.md](docs/jake-summary.md)** — a one-page summary of the project and results.
+3. **[data/label_codebook.json](data/label_codebook.json)** — the 7-category root-cause taxonomy and decision rules used in every prompt and for the specialist labels.
+4. **[REPRODUCIBILITY.md](REPRODUCIBILITY.md)** — what would be required to rerun the full study from scratch.
 
 ---
 
-## Prerequisites
+## What the original pipeline looked like
 
-- Python 3.9+
-- pip
-- (Optional) GPU for training (CPU works for inference)
+The full project ran in Google Colab notebooks against the CFPB API and the OpenAI / Anthropic / Google APIs, then fine-tuned a RoBERTa specialist on Hugging Face weights. At a high level:
+
+1. **Data pull & cleaning** — pull the banking-products subset of the CFPB Consumer Complaint Database, deduplicate, and split ~15,000 narratives into train/test (12,000 / 3,000, seed 42), plus a locked 1,000-row human-labeled holdout.
+2. **GenAI benchmark** — run six foundation models (GPT-4o, GPT-4.1, Claude Sonnet 4, Claude Haiku 4.5, Gemini 2.5 Flash, Gemini 2.5 Flash-Lite) on the holdout with one identical fixed prompt; score accuracy, macro-F1, and MCC.
+3. **Scale labeling** — use the benchmark winner (GPT-4o) to label the ~15k training pool.
+4. **Fine-tune & evaluate** — fine-tune RoBERTa on those labels and evaluate on the same locked holdout.
+
+The dependency set that pipeline used is captured in [requirements.txt](requirements.txt).
 
 ---
 
-## Installation
+## Reproducing the environment
 
-### 1. Clone Repository
-```bash
-git clone https://github.com/tejaswarpadala/bank-rage-classifier.git
-cd bank-rage-classifier
-```
+If you intend to rebuild the pipeline (you will need to supply your own data and API keys — see [REPRODUCIBILITY.md](REPRODUCIBILITY.md)):
 
-### 2. Create Virtual Environment
 ```bash
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-### 3. Install Dependencies
-```bash
+source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
----
-
-## Option A: Explore Notebooks (Recommended)
-
-**Best for**: Understanding the full pipeline and methodology
+API keys for the benchmark would be supplied via environment variables (e.g. an untracked `.env`):
 
 ```bash
-# Launch Jupyter
-jupyter notebook
-
-# Open notebooks/ folder
-# Start with 01_data_exploration.ipynb
-```
-
-**What you'll see**:
-- Data exploration and class distribution
-- GenAI labeling approach (GPT-4o teacher model)
-- RoBERTa training and hyperparameter search
-- Multi-model benchmarking (6+ GenAI models)
-- Error analysis and failure patterns
-
-**Time**: 30-60 minutes to review all notebooks
-
----
-
-## Option B: Run Inference (Fastest)
-
-**Best for**: Testing the model quickly
-
-### Download Pre-trained Model
-```bash
-# Model weights available on HuggingFace (500MB)
-# Coming soon: Direct download link
-```
-
-### Classify a Complaint
-```python
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
-import torch
-
-# Load model
-model = AutoModelForSequenceClassification.from_pretrained(
-    "tejaswar/bank-rage-roberta-specialist"
-)
-tokenizer = AutoTokenizer.from_pretrained("roberta-base")
-
-# Example complaint
-text = "They charged me a fee I never agreed to and won't refund it!"
-
-# Tokenize
-inputs = tokenizer(text, return_tensors="pt", max_length=256, truncation=True)
-
-# Predict
-with torch.no_grad():
-    outputs = model(**inputs)
-    prediction = torch.argmax(outputs.logits, dim=1).item()
-    confidence = torch.softmax(outputs.logits, dim=1).max().item()
-
-# Map to label
-labels = [
-    "Hidden Fees", "Fraud / Security", "Credit Reporting",
-    "Loan Servicing", "Account Access", "Process Failure", "Other"
-]
-
-print(f"Prediction: {labels[prediction]}")
-print(f"Confidence: {confidence:.2f}")
-```
-
-**Output**:
-```
-Prediction: Hidden Fees
-Confidence: 0.94
-```
-
----
-
-## Option C: Run Benchmarking
-
-**Best for**: Comparing GenAI models (requires API keys)
-
-### 1. Set Up API Keys
-Create `.env` file:
-```bash
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=...
+ANTHROPIC_API_KEY=...
 GOOGLE_API_KEY=...
 ```
-
-### 2. Run Benchmark Notebook
-```bash
-jupyter notebook notebooks/04_genai_benchmark.ipynb
-```
-
-**What you'll get**:
-- Performance comparison across 6+ models
-- Cost-speed-accuracy tradeoff charts
-- Reproducibility analysis
-
-**Cost**: ~$5-10 for 1,000 test predictions across all models
-
----
-
-## File Structure
-
-```
-bank-rage-classifier/
-├── README.md                    ← Start here
-├── docs/
-│   ├── tradeoffs.md            ← PM thinking (key differentiator!)
-│   ├── architecture.md         ← Technical decisions
-│   ├── methodology.md          ← Evaluation framework
-│   └── results_analysis.md     ← Performance deep dive
-├── notebooks/
-│   ├── 01_data_exploration.ipynb
-│   ├── 02_genai_labeling.ipynb
-│   ├── 03_specialist_training.ipynb
-│   ├── 04_genai_benchmark.ipynb
-│   └── 05_error_analysis.ipynb
-├── data/
-│   └── label_codebook.json     ← 7-category schema
-├── results/
-│   ├── benchmarks/             ← Model comparison data
-│   ├── visualizations/         ← Charts and plots
-│   └── model_cards/            ← Model documentation
-└── requirements.txt
-```
-
----
-
-## Common Issues
-
-### ImportError: transformers
-```bash
-pip install --upgrade transformers torch
-```
-
-### CUDA Out of Memory (Training)
-```python
-# Reduce batch size in training config
-training_args = TrainingArguments(
-    per_device_train_batch_size=8,  # was 16
-    gradient_accumulation_steps=2
-)
-```
-
-### API Rate Limits (GenAI Benchmarking)
-```python
-# Add delay between requests
-import time
-time.sleep(1)  # Wait 1 second between API calls
-```
-
----
-
-## Next Steps
-
-After getting started:
-
-1. **Read `docs/tradeoffs.md`** - Understand why RoBERTa beats GenAI
-2. **Review `results/model_cards/roberta_specialist.md`** - Model details
-3. **Explore error analysis** (`notebooks/05_error_analysis.ipynb`) - Learn from failures
-4. **Check out Future Work** in main README - RAG, vector DB, active learning roadmap
 
 ---
 
 ## Getting Help
 
-- **GitHub Issues**: Report bugs or ask questions
 - **Email**: tejaswar.padala@gmail.com
 - **LinkedIn**: https://www.linkedin.com/in/teja-padala/
-
----
-
-## Contributing
-
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-Ideas for contributions:
-- Spanish language support (40% of CFPB complaints)
-- Additional GenAI model benchmarks (Llama 3, Mistral)
-- Active learning implementation
-- FastAPI deployment template
-- Docker containerization
-
----
-
-Ready to dive in? Start with the notebooks! 🚀
